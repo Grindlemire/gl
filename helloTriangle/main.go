@@ -22,6 +22,24 @@ var triangle = []float32{
 	0.5, -0.5, 0, // right
 }
 
+// vertex shader program that just passes through the posistion. Null terminate it C
+var vertexShaderSource = `
+	#version 410
+	in vec3 vp;
+	void main() {
+		gl_Position = vec4(vp, 1.0);
+	}
+` + "\x00"
+
+// fragment shader program that just sets the color of the fragment to white. Null terminate it for C
+var fragmentShaderSource = `
+	#version 410
+	out vec4 frag_color;
+	void main(){
+		frag_color = vec4(1, 1, 1, 1);
+	}
+` + "\x00"
+
 // runs the program
 func main() {
 	runtime.LockOSThread()
@@ -176,21 +194,3 @@ func initOpenGL() (prog uint32, err error) {
 
 	return prog, nil
 }
-
-// vertex shader program that just passes through the posistion. Null terminate it C
-var vertexShaderSource = `
-	#version 410
-	in vec3 vp;
-	void main() {
-		gl_Position = vec4(vp, 1.0);
-	}
-` + "\x00"
-
-// fragment shader program that just sets the color of the fragment to white. Null terminate it for C
-var fragmentShaderSource = `
-	#version 410
-	out vec4 frag_color;
-	void main(){
-		frag_color = vec4(1, 1, 1, 1);
-	}
-` + "\x00"
