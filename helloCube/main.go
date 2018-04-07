@@ -90,11 +90,10 @@ func main() {
 
 		// render
 		gl.UseProgram(program)
-		// TODO: what is this for?
+		// This sends the updated model to the shaders so we get rotation
 		gl.UniformMatrix4fv(modelUniform, 1, false, &model[0])
 
-		gl.BindVertexArray(vao)
-
+		gl.BindVertexArray(vao) // note this line is not needed now but will probably be needed when we have multiple vaos
 		gl.DrawArrays(gl.TRIANGLES, 0, 6*2*3)
 
 		window.SwapBuffers()
