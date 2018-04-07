@@ -7,6 +7,7 @@ import (
 
 	"github.com/go-gl/gl/v4.1-core/gl"
 	"github.com/go-gl/glfw/v3.2/glfw"
+	"github.com/go-gl/mathgl/mgl32"
 	"github.com/pkg/errors"
 )
 
@@ -16,35 +17,11 @@ const (
 	winHeight = 500
 )
 
-var triangle = []float32{
-	0, 0.5, 0, // top
-	-0.5, -0.5, 0, // left
-	0.5, -0.5, 0, // right
-}
-
-// vertex shader program that just passes through the posistion. Null terminate it C
-var vertexShaderSource = `
-	#version 410
-	in vec3 vp;
-	void main() {
-		gl_Position = vec4(vp, 1.0);
-	}
-` + "\x00"
-
-// fragment shader program that just sets the color of the fragment to white. Null terminate it for C
-var fragmentShaderSource = `
-	#version 410
-	out vec4 frag_color;
-	void main(){
-		frag_color = vec4(1, 1, 1, 1);
-	}
-` + "\x00"
-
 // runs the program
 func main() {
 	runtime.LockOSThread()
 
-	log.Printf("Starting hello triangle!")
+	log.Printf("Starting hello cube!")
 
 	window, err := initGlfw()
 	if err != nil {
@@ -56,53 +33,73 @@ func main() {
 		log.Fatalf("Error initializing openGL: %v", err)
 	}
 
-	vao := makeVAO(triangle)
+	// model, view, projection := getTransformations(program)
+	// map to screen coordinates
+	projection := mgl32.Perspective(mgl32.DegToRad(45.0), float32(winWidth)/winHeight, 0.1, 10.0)
+	projectionUniform := gl.GetUniformLocation(program, gl.Str("projection\x00"))
+	gl.UniformMatrix4fv(projectionUniform, 1, false, &projection[0])
+
+	// map to camera coordinates
+	view := mgl32.LookAtV(mgl32.Vec3{3, 3, 3}, mgl32.Vec3{0, 0, 0}, mgl32.Vec3{0, 1, 0})
+	viewUniform := gl.GetUniformLocation(program, gl.Str("view\x00"))
+	gl.UniformMatrix4fv(viewUniform, 1, false, &view[0])
+
+	// transform from world coordinates
+	model := mgl32.Ident4()
+	modelUniform := gl.GetUniformLocation(program, gl.Str("model\x00"))
+	gl.UniformMatrix4fv(modelUniform, 1, false, &model[0])
+
+	//vao := makeVAO(cubeVertices)
+
+	// initialize our vertex attribute object and bind it
+	var vao uint32
+	gl.GenVertexArrays(1, &vao)
+	gl.BindVertexArray(vao)
+
+	// load our data into the buffer that the vao will look at
+	var vbo uint32
+	gl.GenBuffers(1, &vbo)
+	gl.BindBuffer(gl.ARRAY_BUFFER, vbo)
+	gl.BufferData(gl.ARRAY_BUFFER, 4*len(cubeVertices), gl.Ptr(cubeVertices), gl.STATIC_DRAW)
+
+	// set the attribute in teh vao for where the points are located
+	vertAttrib := uint32(gl.GetAttribLocation(program, gl.Str("vert\x00")))
+	gl.VertexAttribPointer(vertAttrib, 3, gl.FLOAT, false, 5*4, gl.PtrOffset(0))
+	gl.EnableVertexAttribArray(vertAttrib)
+
+	// enable depth of field and general constants
+	gl.Enable(gl.DEPTH_TEST)
+	gl.DepthFunc(gl.LESS)
+	gl.ClearColor(0.0, 0.0, 0.0, 0.0)
+	gl.PolygonMode(gl.FRONT_AND_BACK, gl.LINE)
+
+	angle := 0.0
+	previousTime := glfw.GetTime()
+
 	for !window.ShouldClose() {
-		draw(vao, window, program)
+		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+
+		time := glfw.GetTime()
+		elapsed := time - previousTime
+		previousTime = time
+		// draw(vao, modelUniform, model, window, program, elapsed)
+
+		// claculate new angle
+		angle += elapsed
+		model = mgl32.HomogRotate3D(float32(angle), mgl32.Vec3{0, 1, 0})
+
+		// render
+		gl.UseProgram(program)
+		gl.UniformMatrix4fv(modelUniform, 1, false, &model[0])
+
+		gl.BindVertexArray(vao)
+
+		gl.DrawArrays(gl.TRIANGLES, 0, 6*2*3)
+
+		window.SwapBuffers()
+		glfw.PollEvents()
 	}
 
-}
-
-// draw draws each frame
-func draw(vao uint32, window *glfw.Window, program uint32) {
-	// clear previous frame
-	gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
-	// use our program
-	gl.UseProgram(program)
-
-	// bind to the vao so when we call draw it knows which to draw
-	gl.BindVertexArray(vao)
-	// draw our array. Tell it to draw triangles, start at the first vertex and draw three vertices
-	countVertices := int32(len(triangle) / 3)
-	gl.DrawArrays(gl.TRIANGLES, 0, countVertices)
-
-	// check for keyboard events
-	glfw.PollEvents()
-	// swap to our new drawn buffers
-	window.SwapBuffers()
-}
-
-// makeVAO takes a list of vertices and makes a vertex array object from them
-func makeVAO(vertices []float32) (vao uint32) {
-	// create vertex buffer object
-	var vbo uint32
-	// generate the buffer with this memory (we only want 1 of them)
-	gl.GenBuffers(1, &vbo)
-	// bind the buffer to our variable and say it is an array buffer
-	gl.BindBuffer(gl.ARRAY_BUFFER, vbo)
-	// place the data  in the buffer and tell it how long the array is
-	gl.BufferData(gl.ARRAY_BUFFER, 4*len(vertices), gl.Ptr(vertices), gl.STATIC_DRAW)
-
-	// generate the vertex array (we only want 1 array)
-	gl.GenVertexArrays(1, &vao)
-	// bind the vertex array to our variable
-	gl.BindVertexArray(vao)
-	// tell the vao about our data. args(index to start at, the number of floats per point, the type, do we normalize, how much space before the next point, global offset)
-	gl.VertexAttribPointer(0, 3, gl.FLOAT, false, 0, nil)
-	// enable the vao
-	gl.EnableVertexAttribArray(0)
-
-	return vao
 }
 
 // compileShader will take the GLSL raw source and compile it to a shader
@@ -166,7 +163,7 @@ func initGlfw() (window *glfw.Window, err error) {
 }
 
 // initOpenGL initializes openGL
-func initOpenGL() (prog uint32, err error) {
+func initOpenGL() (program uint32, err error) {
 	err = gl.Init()
 	if err != nil {
 		return 0, errors.Wrap(err, "unable to initialize openGL")
@@ -175,20 +172,24 @@ func initOpenGL() (prog uint32, err error) {
 	version := gl.GoStr(gl.GetString(gl.VERSION))
 	log.Printf("OpenGL version: %s\n", version)
 
-	vertexShader, err := compileShader(vertexShaderSource, gl.VERTEX_SHADER)
+	vertexShader, err := compileShader(vertexShaderSrc, gl.VERTEX_SHADER)
 	if err != nil {
 		return 0, errors.Wrap(err, "unable to compile vertex shader")
 	}
 
-	fragmentShader, err := compileShader(fragmentShaderSource, gl.FRAGMENT_SHADER)
+	fragmentShader, err := compileShader(fragShaderSrc, gl.FRAGMENT_SHADER)
 	if err != nil {
 		return 0, errors.Wrap(err, "unable to compile fragment shader source")
 	}
 
-	prog = gl.CreateProgram()
-	gl.AttachShader(prog, vertexShader)
-	gl.AttachShader(prog, fragmentShader)
-	gl.LinkProgram(prog)
+	program = gl.CreateProgram()
+	gl.AttachShader(program, vertexShader)
+	gl.AttachShader(program, fragmentShader)
+	gl.LinkProgram(program)
 
-	return prog, nil
+	gl.DeleteShader(vertexShader)
+	gl.DeleteShader(fragmentShader)
+
+	gl.UseProgram(program)
+	return program, nil
 }
