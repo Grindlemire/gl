@@ -49,8 +49,6 @@ func main() {
 	modelUniform := gl.GetUniformLocation(program, gl.Str("model\x00"))
 	gl.UniformMatrix4fv(modelUniform, 1, false, &model[0])
 
-	//vao := makeVAO(cubeVertices)
-
 	// initialize our vertex attribute object and bind it
 	var vao uint32
 	gl.GenVertexArrays(1, &vao)
@@ -71,6 +69,8 @@ func main() {
 	gl.Enable(gl.DEPTH_TEST)
 	gl.DepthFunc(gl.LESS)
 	gl.ClearColor(0.0, 0.0, 0.0, 0.0)
+
+	// draw a wireframe instead of filling
 	gl.PolygonMode(gl.FRONT_AND_BACK, gl.LINE)
 
 	angle := 0.0
@@ -90,6 +90,7 @@ func main() {
 
 		// render
 		gl.UseProgram(program)
+		// TODO: what is this for?
 		gl.UniformMatrix4fv(modelUniform, 1, false, &model[0])
 
 		gl.BindVertexArray(vao)
