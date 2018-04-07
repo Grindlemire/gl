@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// width and height of the window we are creating
 const (
 	winWidth  = 500
 	winHeight = 500
