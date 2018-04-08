@@ -1,7 +1,6 @@
 package main
 
 import (
-	"log"
 	"math"
 
 	"github.com/go-gl/glfw/v3.2/glfw"
@@ -73,7 +72,6 @@ func (c *Camera) ProcessMouseMove(xpos, ypos float64) {
 		c.xpos = xpos
 		c.ypos = ypos
 		c.firstPos = false
-		log.Printf("ENTERED AREA: X: %v | Y: %v", c.xpos, c.ypos)
 		return
 	}
 
@@ -92,8 +90,6 @@ func (c *Camera) ProcessMouseMove(xpos, ypos float64) {
 	if c.pitch < -89.0 {
 		c.pitch = -89.0
 	}
-
-	log.Printf("YAW: %v PITCH: %v", c.yaw, c.pitch)
 
 	x := float32(math.Cos(mgl64.DegToRad(c.yaw)) * math.Cos(mgl64.DegToRad(c.pitch)))
 	y := float32(math.Sin(mgl64.DegToRad(c.pitch)))
