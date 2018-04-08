@@ -33,37 +33,17 @@ func main() {
 		log.Fatalf("Error initializing openGL: %v", err)
 	}
 
-	// model, view, projection := getTransformations(program)
-	// map to screen coordinates
-	projection := mgl32.Perspective(mgl32.DegToRad(45.0), float32(winWidth)/winHeight, 0.1, 10.0)
-	projectionUniform := gl.GetUniformLocation(program, gl.Str("projection\x00"))
-	gl.UniformMatrix4fv(projectionUniform, 1, false, &projection[0])
+	// create our transformations
+	model := NewModel(program, "model")
+	_ = NewView(program, "view", mgl32.Vec3{3, 3, 3}, mgl32.Vec3{0, 0, 0}, mgl32.Vec3{0, 1, 0})
+	_ = NewProjection(program, "projection")
 
-	// map to camera coordinates
-	view := mgl32.LookAtV(mgl32.Vec3{3, 3, 3}, mgl32.Vec3{0, 0, 0}, mgl32.Vec3{0, 1, 0})
-	viewUniform := gl.GetUniformLocation(program, gl.Str("view\x00"))
-	gl.UniformMatrix4fv(viewUniform, 1, false, &view[0])
+	// load our data into our buffers
+	vao := NewVAO()
+	_ = NewVBO(cubeVertices) // we don't need the vbo after initializing it
 
-	// transform from world coordinates
-	model := mgl32.Ident4()
-	modelUniform := gl.GetUniformLocation(program, gl.Str("model\x00"))
-	gl.UniformMatrix4fv(modelUniform, 1, false, &model[0])
-
-	// initialize our vertex attribute object and bind it
-	var vao uint32
-	gl.GenVertexArrays(1, &vao)
-	gl.BindVertexArray(vao)
-
-	// load our data into the buffer that the vao will look at
-	var vbo uint32
-	gl.GenBuffers(1, &vbo)
-	gl.BindBuffer(gl.ARRAY_BUFFER, vbo)
-	gl.BufferData(gl.ARRAY_BUFFER, 4*len(cubeVertices), gl.Ptr(cubeVertices), gl.STATIC_DRAW)
-
-	// set the attribute in teh vao for where the points are located
-	vertAttrib := uint32(gl.GetAttribLocation(program, gl.Str("vert\x00")))
-	gl.VertexAttribPointer(vertAttrib, 3, gl.FLOAT, false, 5*4, gl.PtrOffset(0))
-	gl.EnableVertexAttribArray(vertAttrib)
+	// map our data into the shader
+	vao.MapAttribute(program, "vert", 0, 3, 5)
 
 	// enable depth of field and general constants
 	gl.Enable(gl.DEPTH_TEST)
@@ -82,18 +62,17 @@ func main() {
 		time := glfw.GetTime()
 		elapsed := time - previousTime
 		previousTime = time
-		// draw(vao, modelUniform, model, window, program, elapsed)
 
 		// claculate new angle
 		angle += elapsed
-		model = mgl32.HomogRotate3D(float32(angle), mgl32.Vec3{0, 1, 0})
+		model.UpdateMatrix(mgl32.HomogRotate3D(float32(angle), mgl32.Vec3{0, 1, 0}))
 
 		// render
 		gl.UseProgram(program)
-		// This sends the updated model to the shaders so we get rotation
-		gl.UniformMatrix4fv(modelUniform, 1, false, &model[0])
+		// This sends the updated model transformation to the shaders so we get rotation
+		model.UpdateUniform()
 
-		gl.BindVertexArray(vao) // note this line is not needed now but will probably be needed when we have multiple vaos
+		gl.BindVertexArray(vao.addr) // note this line is not needed now but will probably be needed when we have multiple vaos
 		gl.DrawArrays(gl.TRIANGLES, 0, 6*2*3)
 
 		window.SwapBuffers()
