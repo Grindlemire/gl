@@ -42,7 +42,6 @@ func main() {
 	// load our data into our buffers
 	vao := NewVAO()
 	_ = NewVBO(cubeVertices) // we don't need the vbo after initializing it
-	_ = NewEBO(cubeElements)
 
 	// load our texture
 	texture, err := NewTexture(program, "texSampler", "wall.jpg")
@@ -51,9 +50,8 @@ func main() {
 	}
 
 	// map our data into the shader
-	vao.MapAttribute(program, "vert", 0, 3, 8)
-	vao.MapAttribute(program, "color", 3, 3, 8)
-	vao.MapAttribute(program, "vertTexCoord", 6, 2, 8)
+	vao.MapAttribute(program, "vert", 0, 3, 5)
+	vao.MapAttribute(program, "vertTexCoord", 3, 2, 5)
 
 	// enable depth of field and general constants
 	gl.Enable(gl.DEPTH_TEST)
@@ -85,7 +83,7 @@ func main() {
 		model.UpdateUniform()
 
 		gl.BindVertexArray(vao.addr) // note this line is not needed now but will probably be needed when we have multiple vaos
-		gl.DrawElements(gl.TRIANGLES, 6*6, gl.UNSIGNED_INT, nil)
+		gl.DrawArrays(gl.TRIANGLES, 0, 6*6)
 
 		window.SwapBuffers()
 		glfw.PollEvents()

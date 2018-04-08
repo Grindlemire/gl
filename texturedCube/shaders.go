@@ -21,13 +21,13 @@ var vertexShaderSrc = `
 var fragShaderSrc = `
 	#version 410
 	uniform sampler2D texSampler;
-	
+
 	in vec2 fragTexCoord;
 
 	out vec4 outputColor;
 
 	void main(){
 		outputColor = texture(texSampler, fragTexCoord);
-		
+
 	}
 ` + "\x00"
