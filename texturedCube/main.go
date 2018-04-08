@@ -36,7 +36,7 @@ func main() {
 
 	// create our transformations
 	model := NewModel(program, "model")
-	_ = NewView(program, "view", mgl32.Vec3{3, 3, 3}, mgl32.Vec3{0, 0, 0}, mgl32.Vec3{0, 1, 0})
+	_ = NewView(program, "view", mgl32.Vec3{5, 5, 5}, mgl32.Vec3{0, 0, 0}, mgl32.Vec3{0, 1, 0})
 	_ = NewProjection(program, "projection")
 
 	// load our data into our buffers

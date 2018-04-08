@@ -49,7 +49,7 @@ type Projection struct {
 // It takes the program pointer and the name of the trasnformation in GLSL
 func NewProjection(program uint32, name string) (projection *Projection) {
 	// create the transformation matrix
-	matrix := mgl32.Perspective(mgl32.DegToRad(45.0), float32(winWidth)/winHeight, 0.1, 10.0)
+	matrix := mgl32.Perspective(mgl32.DegToRad(45.0), float32(winWidth)/winHeight, 0.1, 100.0)
 	// get the location in memory where we need to place it
 	addr := gl.GetUniformLocation(program, gl.Str(fmt.Sprintf("%s\x00", name)))
 	// load the data into the memory location
@@ -73,10 +73,10 @@ type View struct {
 
 // NewView creates a view transformation matrix
 // It takes the program pointer, name of the transformation in GLSL, and
-// 3 3x1 matrices corresponding to where the eye is looking, located, and what direction is up
-func NewView(program uint32, name string, looking, located, up mgl32.Vec3) (view *View) {
+// 3 3x1 matrices corresponding to where the eye is looking at, located at, and what direction is up
+func NewView(program uint32, name string, locatedAt, lookingAt, up mgl32.Vec3) (view *View) {
 	// create the view transformation matrix with
-	matrix := mgl32.LookAtV(looking, located, up)
+	matrix := mgl32.LookAtV(locatedAt, lookingAt, up)
 	addr := gl.GetUniformLocation(program, gl.Str(fmt.Sprintf("%s\x00", name)))
 	gl.UniformMatrix4fv(addr, 1, false, &matrix[0])
 
