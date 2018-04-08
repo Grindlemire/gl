@@ -42,3 +42,17 @@ func (vao VertexArrayObject) MapAttribute(program uint32, name string, offset in
 	gl.VertexAttribPointer(attributeAddress, size, gl.FLOAT, false, stride*4, gl.PtrOffset(offset))
 	gl.EnableVertexAttribArray(attributeAddress)
 }
+
+// ElementBufferObject wraps the openGL EBO. It is an efficient way of specifying your triangles
+// to prevent from redrawing lines you don't need to
+type ElementBufferObject struct {
+	addr uint32
+}
+
+// NewEBO creates a new element buffer object
+func NewEBO(elements []uint32) (ebo ElementBufferObject) {
+	gl.GenBuffers(1, &ebo.addr)
+	gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, ebo.addr)
+	gl.BufferData(gl.ELEMENT_ARRAY_BUFFER, 4*len(elements), gl.Ptr(elements), gl.STATIC_DRAW)
+	return ebo
+}
