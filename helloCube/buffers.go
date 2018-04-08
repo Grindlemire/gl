@@ -6,7 +6,8 @@ import (
 	"github.com/go-gl/gl/v4.1-core/gl"
 )
 
-// VertexBufferObject wraps the openGL VBO
+// VertexBufferObject wraps the openGL VBO. It is how you load vertices
+// into your compiled program
 type VertexBufferObject struct {
 	addr uint32
 }
@@ -19,7 +20,7 @@ func NewVBO(vertices []float32) (vbo VertexBufferObject) {
 	return vbo
 }
 
-// VertexArrayObject wraps the openGL VAO
+// VertexArrayObject wraps the openGL VAO. It points to the data loaded in with the vbo
 type VertexArrayObject struct {
 	addr uint32
 }
